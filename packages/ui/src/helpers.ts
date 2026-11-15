@@ -2471,7 +2471,7 @@ export function setObjectPathValue(object: any, path: string, value: any) {
     })
 }
 
-export function applyTheme(themeName: 'light' | 'dark' | 'dracula', doc: Document = document) {
+export function applyTheme(themeName: 'light' | 'dark', doc: Document = document) {
     doc.documentElement.className = `theme-${themeName}`
 }
 

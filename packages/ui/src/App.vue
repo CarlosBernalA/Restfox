@@ -440,10 +440,13 @@ export default {
         const savedCustomResponseFormats = localStorage.getItem(constants.LOCAL_STORAGE_KEY.CUSTOM_RESPONSE_FORMATS)
         const savedResponseLineWrapping = localStorage.getItem(constants.LOCAL_STORAGE_KEY.RESPONSE_LINE_WRAPPING)
 
-        if(savedTheme) {
-            this.$store.state.theme = savedTheme
-            applyTheme(savedTheme)
+        let activeTheme = savedTheme
+        if(!activeTheme || activeTheme === 'dracula') {
+            activeTheme = 'dark'
+            localStorage.setItem(constants.LOCAL_STORAGE_KEY.THEME, 'dark')
         }
+        this.$store.state.theme = activeTheme
+        applyTheme(activeTheme)
 
         if(savedGithubStarCount) {
             this.$store.state.githubStarCount = savedGithubStarCount

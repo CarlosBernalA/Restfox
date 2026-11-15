@@ -372,9 +372,8 @@ export default {
         },
         cycleTheme() {
             const themes = [
-                'light',
                 'dark',
-                'dracula'
+                'light'
             ]
 
             const currentIndex = themes.indexOf(this.theme)

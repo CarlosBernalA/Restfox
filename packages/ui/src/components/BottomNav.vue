@@ -174,7 +174,7 @@ export default {
                 this.$store.commit('showLogsModal', true)
             }
             if(value === 'theme') {
-                const themes = ['light', 'dark', 'dracula']
+                const themes = ['dark', 'light']
                 const currentIndex = themes.indexOf(this.theme)
                 const nextTheme = themes[(currentIndex + 1) % themes.length]
                 this.theme = nextTheme
