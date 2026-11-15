@@ -10,8 +10,25 @@ import {
 } from './global'
 import { type OAuthTokens, setOAuthTokens } from '@/utils/oauth-tokens'
 
+function getApiUrl(endpoint: string): string {
+    const clean = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+    if (typeof window !== 'undefined') {
+        const match = window.location.pathname.match(/^\/__t\/([^/]+)/)
+        if (match && !clean.startsWith('/__t/')) {
+            return `/__t/${match[1]}${clean}`
+        }
+        const queryToken = new URLSearchParams(window.location.search).get('t')
+        if (queryToken && !match && !clean.includes('t=')) {
+            const sep = clean.includes('?') ? '&' : '?'
+            return `${clean}${sep}t=${encodeURIComponent(queryToken)}`
+        }
+    }
+    return clean
+}
+
 async function callWebStandaloneAPI(method: string, args: Record<string, unknown> = {}) {
-    const res = await fetch(`/api/${method}`, {
+    const url = getApiUrl(`/api/${method}`)
+    const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(args, (_, value) => {

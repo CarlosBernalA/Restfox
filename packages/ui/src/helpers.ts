@@ -2927,8 +2927,10 @@ export function getSocketConnectionUrl(url: string, flags: Pick<Flags, 'isWebSta
     }
 
     const protocol = parsedUrl.protocol.startsWith('ws') ? (serverLocation.protocol === 'https:' ? 'wss:' : 'ws:') : serverLocation.protocol
+    const tunnelMatch = typeof window !== 'undefined' && window.location?.pathname?.match(/^\/__t\/([^/]+)/)
+    const tunnelPrefix = tunnelMatch ? `/__t/${tunnelMatch[1]}` : ''
 
-    return `${protocol}//${serverLocation.host}/proxy-socket/${options}/${encodeURIComponent(parsedUrl.origin)}${parsedUrl.pathname}${parsedUrl.search}`
+    return `${protocol}//${serverLocation.host}${tunnelPrefix}/proxy-socket/${options}/${encodeURIComponent(parsedUrl.origin)}${parsedUrl.pathname}${parsedUrl.search}`
 }
 
 // fetch refuses a body for GET and HEAD, in any letter case, so a body set on such a request is not sent. A request
