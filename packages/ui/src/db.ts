@@ -24,6 +24,16 @@ async function callWebStandaloneAPI(method: string, args: Record<string, unknown
             return value
         }),
     })
+
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+    }
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+        throw new Error(`Expected JSON but received: ${contentType}`)
+    }
+
     const data = await res.json()
     if (data.error) {
         throw new Error(data.error)
@@ -120,7 +130,11 @@ const settingsFilesDB = new RestfoxSettingsFilesDatabase()
 
 export async function getSettingsFile(id: string): Promise<SettingsFile | null> {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/getSettingsFile', { id })
+        try {
+            return await callWebStandaloneAPI('db/getSettingsFile', { id })
+        } catch (e) {
+            console.warn('Fallback to settingsFilesDB:', e)
+        }
     }
     const file = await settingsFilesDB.files.get(id)
     return file ? { fileName: file.fileName, content: file.content } : null
@@ -128,14 +142,22 @@ export async function getSettingsFile(id: string): Promise<SettingsFile | null> 
 
 export async function putSettingsFile(id: string, file: SettingsFile) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/putSettingsFile', { id, file })
+        try {
+            await callWebStandaloneAPI('db/putSettingsFile', { id, file })
+        } catch (e) {
+            console.warn('Fallback putSettingsFile:', e)
+        }
     }
     await settingsFilesDB.files.put({ _id: id, ...file })
 }
 
 export async function deleteSettingsFile(id: string) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteSettingsFile', { id })
+        try {
+            await callWebStandaloneAPI('db/deleteSettingsFile', { id })
+        } catch (e) {
+            console.warn('Fallback deleteSettingsFile:', e)
+        }
     }
     await settingsFilesDB.files.delete(id)
 }
@@ -145,7 +167,7 @@ export async function getKV(key: string): Promise<any> {
         try {
             return await callWebStandaloneAPI('db/getKV', { key })
         } catch {
-            return null
+            return localStorage.getItem(key)
         }
     }
     return localStorage.getItem(key)
@@ -156,7 +178,7 @@ export async function setKV(key: string, value: any): Promise<void> {
         try {
             await callWebStandaloneAPI('db/setKV', { key, value })
         } catch (e) {
-            console.error('setKV error:', e)
+            // fallback silencioso
         }
     }
     localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value))
@@ -189,7 +211,12 @@ export async function importDB(file: File) {
 
 export async function getAllWorkspaces(): Promise<Workspace[]> {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/getAllWorkspaces', {})
+        try {
+            const res = await callWebStandaloneAPI('db/getAllWorkspaces', {})
+            if (Array.isArray(res)) return res
+        } catch (e) {
+            console.warn('Fallback getAllWorkspaces to Dexie:', e)
+        }
     }
     return db.workspaces.toCollection().reverse().sortBy('updatedAt')
 }
@@ -203,7 +230,11 @@ export async function getFileWorkspace(location: string): Promise<FileWorkspace>
 
 export async function putWorkspace(workspace: Workspace) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/putWorkspace', { workspace })
+        try {
+            await callWebStandaloneAPI('db/putWorkspace', { workspace })
+        } catch (e) {
+            console.warn('Fallback putWorkspace to Dexie:', e)
+        }
     }
     await db.workspaces.put(workspace)
 }
@@ -211,7 +242,11 @@ export async function putWorkspace(workspace: Workspace) {
 export async function updateWorkspace(workspaceId: string, updatedFields: Partial<Workspace>, skipUpdateForFileWorkspace = false, version?: string, onSending?: () => void): Promise<{ error: string | null, changedOutside?: boolean, version?: string }> {
     if (import.meta.env.MODE === 'web-standalone') {
         onSending?.()
-        return callWebStandaloneAPI('db/updateWorkspace', { workspaceId, updatedFields })
+        try {
+            return await callWebStandaloneAPI('db/updateWorkspace', { workspaceId, updatedFields })
+        } catch (e) {
+            console.warn('Fallback updateWorkspace to Dexie:', e)
+        }
     }
 
     let error: string | null = null
@@ -219,7 +254,7 @@ export async function updateWorkspace(workspaceId: string, updatedFields: Partia
     let savedVersion: string | undefined
     if(fileIPC && !skipUpdateForFileWorkspace) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             const locationChanged = updatedFields.location !== undefined && updatedFields.location !== workspace.location
             try {
                 const sending = fileIPC.updateWorkspace(workspace, updatedFields, version)
@@ -256,7 +291,11 @@ export async function updateWorkspace(workspaceId: string, updatedFields: Partia
 
 export async function deleteWorkspace(workspaceId: string) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteWorkspace', { workspaceId })
+        try {
+            await callWebStandaloneAPI('db/deleteWorkspace', { workspaceId })
+        } catch (e) {
+            console.warn('Fallback deleteWorkspace to Dexie:', e)
+        }
     }
     await db.workspaces.delete(workspaceId)
 }
@@ -265,26 +304,38 @@ export async function deleteWorkspace(workspaceId: string) {
 
 export async function getAllCollectionIdsForGivenWorkspace(workspaceId: string): Promise<string[]> {
     if (import.meta.env.MODE === 'web-standalone') {
-        const res = await callWebStandaloneAPI('db/getCollectionForWorkspace', { workspaceId, type: null })
-        return res?.collection?.map((c: any) => c._id) || []
+        try {
+            const res = await callWebStandaloneAPI('db/getCollectionForWorkspace', { workspaceId, type: null })
+            if (Array.isArray(res?.collection)) {
+                return res.collection.map((c: any) => c._id)
+            }
+        } catch (e) {
+            console.warn('Fallback getAllCollectionIdsForGivenWorkspace to Dexie:', e)
+        }
     }
     return db.collections.where({ workspaceId }).primaryKeys() as Promise<string[]>
 }
 
 export async function getCollectionForWorkspace(workspaceId: string, type = null, watch = false): Promise<{ error: string | null, collection: CollectionItem[], workspace: FileWorkspace | null, idMap: Map<string, string> | null, versions?: Record<string, string>, environmentVersions?: Record<string, string> }> {
     if (import.meta.env.MODE === 'web-standalone') {
-        const result = await callWebStandaloneAPI('db/getCollectionForWorkspace', { workspaceId, type })
-        if (type === null && Array.isArray(result?.collection)) {
-            for(const collectionItem of result.collection) {
-                deserializeRequestFiles(collectionItem)
+        try {
+            const result = await callWebStandaloneAPI('db/getCollectionForWorkspace', { workspaceId, type })
+            if (result && Array.isArray(result.collection)) {
+                if (type === null) {
+                    for(const collectionItem of result.collection) {
+                        deserializeRequestFiles(collectionItem)
+                    }
+                }
+                return result
             }
+        } catch (e) {
+            console.warn('Fallback getCollectionForWorkspace to Dexie:', e)
         }
-        return result
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             const result = await fileIPC.getCollectionForWorkspace(workspace, type, watch)
 
             if (Array.isArray(result.idMap)) {
@@ -320,14 +371,20 @@ export async function getCollectionForWorkspace(workspaceId: string, type = null
 
 export async function getCollectionById(workspaceId: string, collectionId: string): Promise<CollectionItem> {
     if (import.meta.env.MODE === 'web-standalone') {
-        const item = await callWebStandaloneAPI('db/getCollectionById', { collectionId })
-        if (item) deserializeRequestFiles(item)
-        return item
+        try {
+            const item = await callWebStandaloneAPI('db/getCollectionById', { collectionId })
+            if (item) {
+                deserializeRequestFiles(item)
+                return item
+            }
+        } catch (e) {
+            console.warn('Fallback getCollectionById to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.getCollectionById(workspace, collectionId)
         }
     }
@@ -354,14 +411,18 @@ export interface UpdateCollectionResult {
 
 export async function createCollection(workspaceId: string, collection: CollectionItem): Promise<CreateCollectionResult> {
     if (import.meta.env.MODE === 'web-standalone') {
-        const colClone = structuredClone(collection)
-        await serializeRequestFiles(colClone)
-        return callWebStandaloneAPI('db/createCollection', { collection: colClone })
+        try {
+            const colClone = structuredClone(collection)
+            await serializeRequestFiles(colClone)
+            return await callWebStandaloneAPI('db/createCollection', { collection: colClone })
+        } catch (e) {
+            console.warn('Fallback createCollection to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.createCollection(workspace, collection)
         }
     }
@@ -380,14 +441,18 @@ export async function createCollections(workspaceId: string, collections: Collec
     results: CreateCollectionResult[]
 }> {
     if (import.meta.env.MODE === 'web-standalone') {
-        const collectionsClone = structuredClone(collections)
-        await Promise.all(collectionsClone.map(col => serializeRequestFiles(col)))
-        return callWebStandaloneAPI('db/createCollections', { collections: collectionsClone })
+        try {
+            const collectionsClone = structuredClone(collections)
+            await Promise.all(collectionsClone.map(col => serializeRequestFiles(col)))
+            return await callWebStandaloneAPI('db/createCollections', { collections: collectionsClone })
+        } catch (e) {
+            console.warn('Fallback createCollections to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             const collectionsClone = structuredClone(collections)
             await Promise.all(collectionsClone.map(collection => serializeRequestFiles(collection)))
             return fileIPC.createCollections(workspace, collectionsClone)
@@ -497,12 +562,16 @@ export async function updateCollection(workspaceId: string, collectionId: string
         const fieldsClone = structuredClone(updatedFields)
         await serializeRequestFiles(fieldsClone)
         onSending?.()
-        return callWebStandaloneAPI('db/updateCollection', { collectionId, updatedFields: fieldsClone })
+        try {
+            return await callWebStandaloneAPI('db/updateCollection', { collectionId, updatedFields: fieldsClone })
+        } catch (e) {
+            console.warn('Fallback updateCollection to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             await serializeRequestFiles(updatedFields)
             const sending = fileIPC.updateCollection(workspace, collectionId, updatedFields, version)
             onSending?.()
@@ -527,7 +596,7 @@ export async function saveOAuthTokens(workspaceId: string, collectionId: string,
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace?._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             const sending = fileIPC.updateCollection(workspace, collectionId, { oauthTokens }, undefined)
             onSending?.()
             return sending
@@ -560,12 +629,16 @@ export async function modifyCollections(workspaceId: string) {
 
 export async function deleteCollectionsByWorkspaceId(workspaceId: string) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteCollectionsByWorkspaceId', { workspaceId })
+        try {
+            await callWebStandaloneAPI('db/deleteCollectionsByWorkspaceId', { workspaceId })
+        } catch (e) {
+            console.warn('Fallback deleteCollectionsByWorkspaceId to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.deleteCollectionsByWorkspaceId(workspace)
         }
     }
@@ -575,12 +648,16 @@ export async function deleteCollectionsByWorkspaceId(workspaceId: string) {
 
 export async function deleteCollectionsByIds(workspaceId: string, collectionIds: string[]): Promise<{ error: string | null }> {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteCollectionsByIds', { collectionIds })
+        try {
+            return await callWebStandaloneAPI('db/deleteCollectionsByIds', { collectionIds })
+        } catch (e) {
+            console.warn('Fallback deleteCollectionsByIds to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.deleteCollectionsByIds(workspace, collectionIds)
         }
     }
@@ -596,18 +673,22 @@ export async function deleteCollectionsByIds(workspaceId: string, collectionIds:
 
 export async function getResponsesByCollectionId(workspaceId: string, collectionId: string): Promise<RequestFinalResponse[]> {
     if (import.meta.env.MODE === 'web-standalone') {
-        const responses = await callWebStandaloneAPI('db/getResponsesByCollectionId', { collectionId })
-        if (Array.isArray(responses)) {
-            for(const response of responses) {
-                deserializeRequestResponseFiles(response)
+        try {
+            const responses = await callWebStandaloneAPI('db/getResponsesByCollectionId', { collectionId })
+            if (Array.isArray(responses)) {
+                for(const response of responses) {
+                    deserializeRequestResponseFiles(response)
+                }
+                return responses
             }
+        } catch (e) {
+            console.warn('Fallback getResponsesByCollectionId to Dexie:', e)
         }
-        return responses || []
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             const responses = await fileIPC.getResponsesByCollectionId(workspace, collectionId)
             for(const response of responses) {
                 deserializeRequestResponseFiles(response)
@@ -621,14 +702,18 @@ export async function getResponsesByCollectionId(workspaceId: string, collection
 
 export async function createResponse(workspaceId: string, response: RequestFinalResponse) {
     if (import.meta.env.MODE === 'web-standalone') {
-        const respClone = structuredClone(response)
-        await serializeRequestResponseFiles(respClone)
-        return callWebStandaloneAPI('db/createResponse', { response: respClone })
+        try {
+            const respClone = structuredClone(response)
+            await serializeRequestResponseFiles(respClone)
+            return await callWebStandaloneAPI('db/createResponse', { response: respClone })
+        } catch (e) {
+            console.warn('Fallback createResponse to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             await serializeRequestResponseFiles(response)
             return fileIPC.createResponse(workspace, response)
         }
@@ -639,12 +724,16 @@ export async function createResponse(workspaceId: string, response: RequestFinal
 
 export async function updateResponse(workspaceId: string, collectionId: string, responseId: string, updatedFields: Partial<RequestFinalResponse>) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/updateResponse', { responseId, updatedFields })
+        try {
+            return await callWebStandaloneAPI('db/updateResponse', { responseId, updatedFields })
+        } catch (e) {
+            console.warn('Fallback updateResponse to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.updateResponse(workspace, collectionId, responseId, updatedFields)
         }
     }
@@ -654,12 +743,16 @@ export async function updateResponse(workspaceId: string, collectionId: string, 
 
 export async function deleteResponse(workspaceId: string, collectionId: string, responseId: string) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteResponse', { responseId })
+        try {
+            return await callWebStandaloneAPI('db/deleteResponse', { responseId })
+        } catch (e) {
+            console.warn('Fallback deleteResponse to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.deleteResponse(workspace, collectionId, responseId)
         }
     }
@@ -669,12 +762,16 @@ export async function deleteResponse(workspaceId: string, collectionId: string, 
 
 export async function deleteResponsesByIds(workspaceId: string, collectionId: string, responseIds: string[]) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteResponsesByIds', { responseIds })
+        try {
+            return await callWebStandaloneAPI('db/deleteResponsesByIds', { responseIds })
+        } catch (e) {
+            console.warn('Fallback deleteResponsesByIds to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.deleteResponsesByIds(workspace, collectionId, responseIds)
         }
     }
@@ -684,12 +781,16 @@ export async function deleteResponsesByIds(workspaceId: string, collectionId: st
 
 export async function deleteResponsesByCollectionIds(workspaceId: string, collectionIds: string[]) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteResponsesByCollectionIds', { collectionIds })
+        try {
+            return await callWebStandaloneAPI('db/deleteResponsesByCollectionIds', { collectionIds })
+        } catch (e) {
+            console.warn('Fallback deleteResponsesByCollectionIds to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.deleteResponsesByCollectionIds(workspace, collectionIds)
         }
     }
@@ -699,12 +800,16 @@ export async function deleteResponsesByCollectionIds(workspaceId: string, collec
 
 export async function deleteResponsesByCollectionId(workspaceId: string, collectionId: string) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deleteResponsesByCollectionId', { collectionId })
+        try {
+            return await callWebStandaloneAPI('db/deleteResponsesByCollectionId', { collectionId })
+        } catch (e) {
+            console.warn('Fallback deleteResponsesByCollectionId to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if(workspace && workspace._type === 'file') {
             return fileIPC.deleteResponsesByCollectionId(workspace, collectionId)
         }
     }
@@ -716,7 +821,12 @@ export async function deleteResponsesByCollectionId(workspaceId: string, collect
 
 export async function getGlobalPlugins() {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/getGlobalPlugins', {})
+        try {
+            const plugins = await callWebStandaloneAPI('db/getGlobalPlugins', {})
+            if (Array.isArray(plugins)) return plugins
+        } catch (e) {
+            console.warn('Fallback getGlobalPlugins to Dexie:', e)
+        }
     }
     const allPlugins = await db.plugins.toArray()
     return allPlugins.filter(plugin => plugin.workspaceId == null && plugin.collectionId == null)
@@ -742,12 +852,17 @@ export function withoutDuplicateLeftovers(plugins: Plugin[], workspaceId: string
 
 export async function getWorkspacePlugins(workspaceId: string) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/getWorkspacePlugins', { workspaceId })
+        try {
+            const plugins = await callWebStandaloneAPI('db/getWorkspacePlugins', { workspaceId })
+            if (Array.isArray(plugins)) return plugins
+        } catch (e) {
+            console.warn('Fallback getWorkspacePlugins to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if (workspace._type === 'file') {
+        if (workspace && workspace._type === 'file') {
             return fileIPC.getWorkspacePlugins(workspace)
         }
     }
@@ -764,12 +879,16 @@ export async function getWorkspacePlugins(workspaceId: string) {
 
 export async function createPlugin(plugin: Plugin, workspaceId: string | null = null) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/createPlugin', { plugin })
+        try {
+            return await callWebStandaloneAPI('db/createPlugin', { plugin })
+        } catch (e) {
+            console.warn('Fallback createPlugin to Dexie:', e)
+        }
     }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
-        if (workspace._type === 'file') {
+        if (workspace && workspace._type === 'file') {
             return fileIPC.createPlugin(workspace, plugin)
         }
     }
@@ -779,12 +898,16 @@ export async function createPlugin(plugin: Plugin, workspaceId: string | null = 
 
 export async function updatePlugin(pluginId: string, updatedFields: Partial<Plugin>, workspaceId: string | null = null, collectionId: string | null = null, expectedCode?: unknown): Promise<{ error?: string | null, changedOutside?: boolean } | undefined> {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/updatePlugin', { pluginId, updatedFields })
+        try {
+            return await callWebStandaloneAPI('db/updatePlugin', { pluginId, updatedFields })
+        } catch (e) {
+            console.warn('Fallback updatePlugin to Dexie:', e)
+        }
     }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
-        if (workspace._type === 'file') {
+        if (workspace && workspace._type === 'file') {
             return fileIPC.updatePlugin(workspace, collectionId, pluginId, updatedFields, expectedCode)
         }
     }
@@ -794,12 +917,16 @@ export async function updatePlugin(pluginId: string, updatedFields: Partial<Plug
 
 export async function deletePlugin(pluginId: string, workspaceId: string | null = null, collectionId: string | null = null) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deletePlugin', { pluginId })
+        try {
+            return await callWebStandaloneAPI('db/deletePlugin', { pluginId })
+        } catch (e) {
+            console.warn('Fallback deletePlugin to Dexie:', e)
+        }
     }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
-        if (workspace._type === 'file') {
+        if (workspace && workspace._type === 'file') {
             return fileIPC.deletePlugin(workspace, collectionId, pluginId)
         }
     }
@@ -809,12 +936,16 @@ export async function deletePlugin(pluginId: string, workspaceId: string | null 
 
 export async function deletePluginsByWorkspace(workspaceId: string) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deletePluginsByWorkspace', { workspaceId })
+        try {
+            await callWebStandaloneAPI('db/deletePluginsByWorkspace', { workspaceId })
+        } catch (e) {
+            console.warn('Fallback deletePluginsByWorkspace to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if (workspace._type === 'file') {
+        if (workspace && workspace._type === 'file') {
             return fileIPC.deletePluginsByWorkspace(workspace)
         }
     }
@@ -824,12 +955,16 @@ export async function deletePluginsByWorkspace(workspaceId: string) {
 
 export async function deletePluginsByCollectionIds(workspaceId: string, collectionIds: string[]) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/deletePluginsByCollectionIds', { collectionIds })
+        try {
+            await callWebStandaloneAPI('db/deletePluginsByCollectionIds', { collectionIds })
+        } catch (e) {
+            console.warn('Fallback deletePluginsByCollectionIds to Dexie:', e)
+        }
     }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
-        if (workspace._type === 'file') {
+        if (workspace && workspace._type === 'file') {
             return fileIPC.deletePluginsByCollectionIds(workspace, collectionIds)
         }
     }
@@ -839,12 +974,16 @@ export async function deletePluginsByCollectionIds(workspaceId: string, collecti
 
 export async function createPlugins(plugins: Plugin[], workspaceId: string | null = null) {
     if (import.meta.env.MODE === 'web-standalone') {
-        return callWebStandaloneAPI('db/createPlugins', { plugins })
+        try {
+            return await callWebStandaloneAPI('db/createPlugins', { plugins })
+        } catch (e) {
+            console.warn('Fallback createPlugins to Dexie:', e)
+        }
     }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
-        if (workspace._type === 'file') {
+        if (workspace && workspace._type === 'file') {
             return fileIPC.createPlugins(workspace, plugins)
         }
     }
