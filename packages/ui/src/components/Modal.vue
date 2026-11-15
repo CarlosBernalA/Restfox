@@ -91,7 +91,9 @@ export default {
     max-width: 95vw;
     position: relative;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: 14px;
+    border: 1px solid var(--modal-border-color);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
     margin: 0 auto;
     background-color: var(--modal-background-color);
     color: var(--modal-text-color);

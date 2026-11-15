@@ -978,7 +978,7 @@ export const store = createStore<State>({
                 workspace: [],
             },
             requestResponseLayout: 'left-right',
-            theme: 'light',
+            theme: 'dark',
             githubStarCount: '0',
             sidebarItemTemporaryName: {},
             flags: {

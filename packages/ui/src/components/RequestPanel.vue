@@ -1172,9 +1172,12 @@ export default {
 .request-panel-address-bar {
     display: flex;
     border-bottom: 1px solid var(--default-border-color);
-    height: 2rem;
+    height: 2.4rem;
     align-items: center;
     min-width: 0;
+    padding: 3px 8px;
+    gap: 6px;
+    background: var(--surface-color);
 }
 
 .request-panel-address-bar > select {
@@ -1194,19 +1197,27 @@ export default {
     padding: 5px;
     outline: 0;
     background: inherit;
+    border-radius: 6px;
 }
 
 .request-panel-address-bar button {
-    background-color: var(--send-request-button-color);
+    background: linear-gradient(135deg, var(--send-request-button-color) 0%, var(--send-request-button-hover-color) 100%);
     color: white;
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+    padding-left: 1.2rem;
+    padding-right: 1.2rem;
     height: 100%;
     cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    transition: all 0.2s ease;
 }
 
 .request-panel-address-bar button:hover {
-    background-color: var(--send-request-button-hover-color);
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    transform: translateY(-1px);
 }
 
 .request-panel-tabs {
@@ -1278,8 +1289,8 @@ export default {
 }
 
 .send-options {
-    background-color: var(--send-request-button-color);
-    color: var(--primary-text-color);
+    background: linear-gradient(135deg, var(--send-request-button-color) 0%, var(--send-request-button-hover-color) 100%);
+    color: white;
     margin-right: 0rem;
     padding-right: 0.6rem;
     padding-left: 0.6rem;
@@ -1288,10 +1299,13 @@ export default {
     align-items: center;
     user-select: none;
     height: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    transition: all 0.2s ease;
 }
 
 .send-options:hover {
-    background-color: var(--send-request-button-hover-color);
+    filter: brightness(1.1);
 }
 
 .send-options.custom-dropdown > i {

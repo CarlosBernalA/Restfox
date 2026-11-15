@@ -7,169 +7,70 @@ html, body, #app {
 }
 
 html {
-    --font-monospace: Menlo, Monaco, Consolas, 'Droid Sans Mono', 'Courier New', monospace,
-        'Droid Sans Fallback';
-    --font-default: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', 'HelveticaNeue-Light',
-        'Ubuntu', 'Droid Sans', sans-serif;
-    --default-border-radius: 3px;
-    --label-margin-bottom: 0.25rem;
-    /* theme colors */
-    --default-border-color: lightgrey;
-    --default-border-color-modal: var(--default-border-color);
-    --border-color-lighter: #f1f1f1;
-    --border-color-lighter-darkened: #f1f1f147;
-    --base-color-success: #047857;
-    --base-color-info: #097bed;
-    --base-color-warning: #ffb400;
-    --base-color-error: #b91c1c;
-    --background-color: white;
-    --background-color-lighter: #f1f1f1;
-    --text-color: black;
-    --caret-color: black;
-    --scrollbar: #dfdfdf;
-    --scrollbar-background: #f3f2f2;
-    --link-color: rgb(0, 0, 238);
-    --modal-link-color: var(--link-color);
-    --input-disabled-background-color: rgba(239, 239, 239, 0.3);
-    --input-disabled-color: rgb(84, 84, 84);
-    --input-selection-background-color: #9cc3f5;
-    --input-highlight-outline-color: #1a73e8;
-    --input-border-color: var(--default-border-color);
-    --input-disabled-border-color: var(--input-border-color);
-    --button-background-color: white;
-    --button-hover-background-color: #f8f8f8;
-    --button-text-color: black;
-    --button-border-color: #8c8c8c;
-    --modal-background-color: white;
-    --modal-footer-background-color: #fafafa;
-    --modal-text-color: black;
-    --modal-caret-color: black;
-    --modal-border-color: lightgrey;
-    --modal-scrollbar: #dfdfdf;
-    --modal-scrollbar-background: #f3f2f2;
-    --modal-button-background-color: white;
-    --modal-button-hover-background-color: #f8f8f8;
-    --modal-button-text-color: black;
-    --modal-button-border-color: #8c8c8c;
-    --modal-input-disabled-background-color: var(--input-disabled-background-color);
-    --modal-input-disabled-color: var(--input-disabled-color);
-    --modal-input-selection-background-color: var(--input-selection-background-color);
-    --sidebar-item-active-color: #f3f3f3;
-    --resizer-background-color: #f1f1f1;
-    --response-panel-history-select-hover-color: #f7f7f7;
-    --response-panel-loader-background-color: #29292969;
-    --response-panel-loader-color: #292929;
-    --github-button-icon-fill-color: black;
-    --cm-string: #a11;
-    --cm-boolean: #219;
-    --cm-null: #708;
-    --cm-number: #164;
-    --cm-comment: #940;
-    --cm-keyword: #708;
-    --cm-variable: #00f;
-    --cm-tooltip-background-color: #f5f5f5;
-    --cm-selection-background-color: #00000021;
-    --cm-selection-match-background-color: #99ff7780;
-    --modal-cm-string: #a11;
-    --modal-cm-boolean: #219;
-    --modal-cm-null: #708;
-    --modal-cm-number: #164;
-    --modal-cm-comment: #940;
-    --modal-cm-keyword: #708;
-    --modal-cm-variable: #00f;
-    --modal-cm-tooltip-background-color: #f5f5f5;
-    --modal-cm-selection-background-color: #00000021;
-    --modal-cm-selection-match-background-color: #99ff7780;
-    --drop-target-background-color: #ffc0cb1f;
-    --workspace-menu-hover-background-color: #dbedff;
-    --method-get: #ab7aff;
-    --method-post: #9ed06c;
-    --method-put: #e17611;
-    --method-delete: #d02141;
-    --method-patch: #c49804;
-    --method-options: #2bc2f0;
-    --method-head: #267aba;
-    --method-grpc: #12a594;
-    --socket-header-background-color: #edf2f7;
-    --socket-button-background-color: cadetblue;
-    --socket-input-disabled-background-color: #fafbfd;
-    --socket-green-row-background-color: #ddffb6;
-    --valid-env-highlight-color: #2e7d32;
-    --valid-env-highlight-background-color: #e8f5e9;
-    --invalid-env-highlight-color: #d32f2f;
-    --invalid-env-highlight-background-color: #ffebee;
-    --modal-valid-env-highlight-color: #2e7d32;
-    --modal-valid-env-highlight-background-color: #e8f5e9;
-    --modal-invalid-env-highlight-color: #d32f2f;
-    --modal-invalid-env-highlight-background-color: #ffebee;
-    --box-shadow-color: rgba(0, 0, 0, 0.1);
-    --tip-text-color: #7b7a7a;
-    --modal-tip-text-color: var(--tip-text-color);
-    --primary-text-color: white;
-    --primary-background-color: #1a73e8;
-    --primary-hover-background-color: rgba(26, 115, 232, 0.5);
-    --menu-border-color: #82828240;
-    --send-request-button-color: #7f4fd5;
-    --send-request-button-hover-color: #673ab7;
-    --nav-active-color: #097bed;
-}
+    --font-monospace: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Droid Sans Mono', monospace;
+    --font-default: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    --default-border-radius: 8px;
+    --label-margin-bottom: 0.35rem;
 
-html.theme-dark {
-    --default-border-color: #484848;
+    /* EpiFlow Light Theme */
+    --default-border-color: #d1ded9;
     --default-border-color-modal: var(--default-border-color);
-    --border-color-lighter: #484848;
-    --border-color-lighter-darkened: #48484847;
-    --base-color-success: #0bb27e;
-    --base-color-info: #097bed;
-    --base-color-warning: #ffb400;
-    --base-color-error: #f06f57;
-    --background-color: #292929;
-    --text-color: #d9d9d9;
-    --caret-color: var(--text-color);
-    --scrollbar: #505050;
-    --scrollbar-background: #353535;
-    --link-color: #d9c9ff;
+    --border-color-lighter: #e5ede9;
+    --border-color-lighter-darkened: rgba(0, 0, 0, 0.04);
+    --base-color-success: #10b981;
+    --base-color-info: #059669;
+    --base-color-warning: #f59e0b;
+    --base-color-error: #ef4444;
+    --background-color: #f7faf8;
+    --background-color-lighter: #f0fdf4;
+    --bg-gradient: radial-gradient(circle at 12% 12%, #ebfaf2 0%, #f7faf9 50%, #eff5f2 100%);
+    --surface-color: #ffffff;
+    --text-color: #111827;
+    --caret-color: #059669;
+    --scrollbar: #c2d4cd;
+    --scrollbar-background: #edf4f1;
+    --link-color: #059669;
     --modal-link-color: var(--link-color);
-    --input-disabled-background-color: rgba(59, 59, 59, 0.3);
-    --input-disabled-color: rgb(170, 170, 170);
-    --input-selection-background-color: #083ca6;
-    --input-highlight-outline-color: #1a73e899;
-    --input-border-color: var(--default-border-color);
+    --input-disabled-background-color: rgba(239, 246, 243, 0.6);
+    --input-disabled-color: #94a3b8;
+    --input-selection-background-color: #a7f3d0;
+    --input-highlight-outline-color: #10b981;
+    --input-border-color: #c9d7d2;
     --input-disabled-border-color: var(--input-border-color);
+    --button-background-color: #ffffff;
+    --button-hover-background-color: #f0fdf4;
+    --button-text-color: #111827;
+    --button-border-color: #c9d7d2;
+    --modal-background-color: #ffffff;
+    --modal-footer-background-color: #f7faf8;
+    --modal-text-color: #111827;
+    --modal-caret-color: #059669;
+    --modal-border-color: #d1ded9;
+    --modal-scrollbar: #c2d4cd;
+    --modal-scrollbar-background: #edf4f1;
+    --modal-button-background-color: #ffffff;
+    --modal-button-hover-background-color: #f0fdf4;
+    --modal-button-text-color: #111827;
+    --modal-button-border-color: #c9d7d2;
     --modal-input-disabled-background-color: var(--input-disabled-background-color);
     --modal-input-disabled-color: var(--input-disabled-color);
     --modal-input-selection-background-color: var(--input-selection-background-color);
-    --button-background-color: #292929;
-    --button-hover-background-color: #595858;
-    --button-text-color: var(--text-color);
-    --button-border-color: #8c8c8c;
-    --modal-background-color: var(--background-color);
-    --modal-footer-background-color: #232323;
-    --modal-text-color: var(--text-color);
-    --modal-caret-color: var(--caret-color);
-    --modal-border-color: var(--default-border-color-modal);
-    --modal-scrollbar: var(--scrollbar);
-    --modal-scrollbar-background: var(--background-color);
-    --modal-button-background-color: var(--button-background-color);
-    --modal-button-hover-background-color: var(--button-hover-background-color);
-    --modal-button-text-color: var(--button-text-color);
-    --modal-button-border-color: var(--button-border-color);
-    --sidebar-item-active-color: #353535;
-    --resizer-background-color: #353535;
-    --response-panel-history-select-hover-color: #353535;
-    --response-panel-loader-background-color: #29292969;
-    --response-panel-loader-color: white;
-    --github-button-icon-fill-color: white;
-    --cm-string: #ff6464;
-    --cm-boolean: #b0a4ff;
-    --cm-null: #f190ff;
-    --cm-number: #1cd58b;
-    --cm-comment: #ee8735;
-    --cm-keyword: #ca73d7;
-    --cm-variable: #a7a7ff;
-    --cm-tooltip-background-color: var(--background-color);
-    --cm-selection-background-color: #ffffff33;
-    --cm-selection-match-background-color: #99ff773d;
+    --sidebar-item-active-color: #e6f2ed;
+    --resizer-background-color: #e2ede8;
+    --response-panel-history-select-hover-color: #f0fdf4;
+    --response-panel-loader-background-color: rgba(16, 185, 129, 0.15);
+    --response-panel-loader-color: #059669;
+    --github-button-icon-fill-color: #111827;
+    --cm-string: #047857;
+    --cm-boolean: #6d28d9;
+    --cm-null: #7c3aed;
+    --cm-number: #0284c7;
+    --cm-comment: #94a3b8;
+    --cm-keyword: #059669;
+    --cm-variable: #0f172a;
+    --cm-tooltip-background-color: #ffffff;
+    --cm-selection-background-color: rgba(16, 185, 129, 0.2);
+    --cm-selection-match-background-color: rgba(16, 185, 129, 0.35);
     --modal-cm-string: var(--cm-string);
     --modal-cm-boolean: var(--cm-boolean);
     --modal-cm-null: var(--cm-null);
@@ -180,38 +81,142 @@ html.theme-dark {
     --modal-cm-tooltip-background-color: var(--cm-tooltip-background-color);
     --modal-cm-selection-background-color: var(--cm-selection-background-color);
     --modal-cm-selection-match-background-color: var(--cm-selection-match-background-color);
-    --drop-target-background-color: #f8889b41;
-    --workspace-menu-hover-background-color: #505050;
-    --method-get: #ab7aff;
-    --method-post: #9ed06c;
-    --method-put: #e17611;
-    --method-delete: #d02141;
-    --method-patch: #fcca25;
-    --method-options: #2bc2f0;
-    --method-head: #267aba;
-    --method-grpc: #3fd0bf;
-    --socket-header-background-color: var(--sidebar-item-active-color);
-    --socket-button-background-color: #2c3f40;
-    --socket-input-disabled-background-color: #2d2d2d;
-    --socket-green-row-background-color: #88ff0017;
-    --valid-env-highlight-color: #a5d6a7;
-    --valid-env-highlight-background-color: #1b5e20;
-    --invalid-env-highlight-color: #ffcccb;
-    --invalid-env-highlight-background-color: #7c0404;
+    --drop-target-background-color: rgba(16, 185, 129, 0.12);
+    --workspace-menu-hover-background-color: #d1fae5;
+    --method-get: #059669;
+    --method-post: #10b981;
+    --method-put: #f59e0b;
+    --method-delete: #ef4444;
+    --method-patch: #8b5cf6;
+    --method-options: #06b6d4;
+    --method-head: #64748b;
+    --method-grpc: #10b981;
+    --socket-header-background-color: #e6f2ed;
+    --socket-button-background-color: #059669;
+    --socket-input-disabled-background-color: #f7faf8;
+    --socket-green-row-background-color: #ecfdf5;
+    --valid-env-highlight-color: #065f46;
+    --valid-env-highlight-background-color: #d1fae5;
+    --invalid-env-highlight-color: #991b1b;
+    --invalid-env-highlight-background-color: #fee2e2;
     --modal-valid-env-highlight-color: var(--valid-env-highlight-color);
     --modal-valid-env-highlight-background-color: var(--valid-env-highlight-background-color);
     --modal-invalid-env-highlight-color: var(--invalid-env-highlight-color);
     --modal-invalid-env-highlight-background-color: var(--invalid-env-highlight-background-color);
-    --box-shadow-color: rgba(255, 255, 255, 0.1);
-    --tip-text-color: #b1b1b1;
+    --box-shadow-color: rgba(16, 185, 129, 0.08);
+    --tip-text-color: #64748b;
     --modal-tip-text-color: var(--tip-text-color);
-    --primary-text-color: var(--text-color);
-    --primary-background-color: #1a73e8;
-    --primary-hover-background-color: rgba(26, 115, 232, 0.5);
-    --menu-border-color: #48484880;
-    --send-request-button-color: #7f4fd5;
-    --send-request-button-hover-color: #673ab7;
-    --nav-active-color: #ab7aff;
+    --primary-text-color: white;
+    --primary-background-color: #059669;
+    --primary-hover-background-color: #047857;
+    --menu-border-color: #d1ded9;
+    --send-request-button-color: #059669;
+    --send-request-button-hover-color: #047857;
+    --nav-active-color: #059669;
+}
+
+html.theme-dark {
+    /* EpiFlow Dark Theme (Signature Brand) */
+    --default-border-color: #232d2a;
+    --default-border-color-modal: var(--default-border-color);
+    --border-color-lighter: #283431;
+    --border-color-lighter-darkened: rgba(255, 255, 255, 0.05);
+    --base-color-success: #10b981;
+    --base-color-info: #10b981;
+    --base-color-warning: #f59e0b;
+    --base-color-error: #ef4444;
+    --background-color: #0e1312;
+    --background-color-lighter: #161e1c;
+    --bg-gradient: radial-gradient(circle at 12% 12%, #142420 0%, #0e1312 55%, #080c0b 100%);
+    --surface-color: #161e1c;
+    --text-color: #f1f5f4;
+    --caret-color: #10b981;
+    --scrollbar: #283632;
+    --scrollbar-background: #0e1312;
+    --link-color: #34d399;
+    --modal-link-color: var(--link-color);
+    --input-disabled-background-color: rgba(22, 30, 28, 0.5);
+    --input-disabled-color: #64748b;
+    --input-selection-background-color: rgba(16, 185, 129, 0.25);
+    --input-highlight-outline-color: #10b981;
+    --input-border-color: #283431;
+    --input-disabled-border-color: var(--input-border-color);
+    --modal-input-disabled-background-color: var(--input-disabled-background-color);
+    --modal-input-disabled-color: var(--input-disabled-color);
+    --modal-input-selection-background-color: var(--input-selection-background-color);
+    --button-background-color: #161e1c;
+    --button-hover-background-color: #1f2926;
+    --button-text-color: var(--text-color);
+    --button-border-color: #2e3d38;
+    --modal-background-color: #161e1c;
+    --modal-footer-background-color: #101614;
+    --modal-text-color: var(--text-color);
+    --modal-caret-color: #10b981;
+    --modal-border-color: #283632;
+    --modal-scrollbar: var(--scrollbar);
+    --modal-scrollbar-background: var(--background-color);
+    --modal-button-background-color: var(--button-background-color);
+    --modal-button-hover-background-color: var(--button-hover-background-color);
+    --modal-button-text-color: var(--button-text-color);
+    --modal-button-border-color: var(--button-border-color);
+    --sidebar-item-active-color: #1a2522;
+    --resizer-background-color: #18221f;
+    --response-panel-history-select-hover-color: #1a2522;
+    --response-panel-loader-background-color: rgba(16, 185, 129, 0.15);
+    --response-panel-loader-color: #10b981;
+    --github-button-icon-fill-color: #f1f5f4;
+    --cm-string: #34d399;
+    --cm-boolean: #a78bfa;
+    --cm-null: #c084fc;
+    --cm-number: #38bdf8;
+    --cm-comment: #64748b;
+    --cm-keyword: #10b981;
+    --cm-variable: #f1f5f4;
+    --cm-tooltip-background-color: #161e1c;
+    --cm-selection-background-color: rgba(16, 185, 129, 0.25);
+    --cm-selection-match-background-color: rgba(16, 185, 129, 0.4);
+    --modal-cm-string: var(--cm-string);
+    --modal-cm-boolean: var(--cm-boolean);
+    --modal-cm-null: var(--cm-null);
+    --modal-cm-number: var(--cm-number);
+    --modal-cm-comment: var(--cm-comment);
+    --modal-cm-keyword: var(--cm-keyword);
+    --modal-cm-variable: var(--cm-variable);
+    --modal-cm-tooltip-background-color: var(--cm-tooltip-background-color);
+    --modal-cm-selection-background-color: var(--cm-selection-background-color);
+    --modal-cm-selection-match-background-color: var(--cm-selection-match-background-color);
+    --drop-target-background-color: rgba(16, 185, 129, 0.15);
+    --workspace-menu-hover-background-color: #1f2926;
+    --method-get: #10b981;
+    --method-post: #34d399;
+    --method-put: #f59e0b;
+    --method-delete: #ef4444;
+    --method-patch: #a78bfa;
+    --method-options: #38bdf8;
+    --method-head: #94a3b8;
+    --method-grpc: #10b981;
+    --socket-header-background-color: #1a2522;
+    --socket-button-background-color: #047857;
+    --socket-input-disabled-background-color: #161e1c;
+    --socket-green-row-background-color: rgba(16, 185, 129, 0.12);
+    --valid-env-highlight-color: #a7f3d0;
+    --valid-env-highlight-background-color: #064e3b;
+    --invalid-env-highlight-color: #fecaca;
+    --invalid-env-highlight-background-color: #7f1d1d;
+    --modal-valid-env-highlight-color: var(--valid-env-highlight-color);
+    --modal-valid-env-highlight-background-color: var(--valid-env-highlight-background-color);
+    --modal-invalid-env-highlight-color: var(--invalid-env-highlight-color);
+    --modal-invalid-env-highlight-background-color: var(--invalid-env-highlight-background-color);
+    --box-shadow-color: rgba(0, 0, 0, 0.4);
+    --tip-text-color: #8b9793;
+    --modal-tip-text-color: var(--tip-text-color);
+    --primary-text-color: #f1f5f4;
+    --primary-background-color: #10b981;
+    --primary-hover-background-color: #059669;
+    --menu-border-color: #283632;
+    --send-request-button-color: #10b981;
+    --send-request-button-hover-color: #059669;
+    --nav-active-color: #10b981;
 }
 
 html.theme-dracula {
@@ -322,22 +327,31 @@ body {
     font-family: var(--font-default);
     font-size: 13px;
     background-color: var(--background-color);
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
     color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 ::-webkit-scrollbar {
-    width: 9px;
-    height: 5px;
-    background-color: var(--scrollbar-background);
+    width: 8px;
+    height: 6px;
+    background-color: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar);
-    height: 70%;
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--base-color-info);
 }
 
 [class*='request-method--'] {
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .request-method--GET, .request-method--SOCK {
@@ -420,12 +434,13 @@ textarea.full-width-input {
     border: 1px solid var(--input-border-color);
     border-radius: var(--default-border-radius);
     outline: 0;
-    padding: 0.4rem;
+    padding: 0.5rem 0.75rem;
     background: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input.full-width-input {
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     background: var(--modal-background-color);
 }
 
@@ -437,7 +452,8 @@ textarea.full-width-input {
 .code-block {
     background-color: var(--background-color);
     color: var(--text-color);
-    padding: 0.1rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
     border: 1px solid var(--default-border-color);
     font-family: var(--font-monospace);
 }
@@ -448,12 +464,13 @@ select.full-width-input option {
 }
 
 .full-width-input.slim {
-    padding: 0.1rem;
+    padding: 0.2rem 0.4rem;
 }
 
 .full-width-input:focus {
-    outline: 1px solid var(--input-highlight-outline-color);
-    border: 1px solid var(--input-highlight-outline-color);
+    outline: none !important;
+    border-color: var(--input-highlight-outline-color) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
 }
 
 .modal * {
@@ -464,12 +481,16 @@ button.button, input[type="file"]::file-selector-button {
     background-color: var(--button-background-color);
     color: var(--button-text-color);
     border: 1px solid var(--button-border-color);
-    padding: 3px 10px;
-    border-radius: 3px;
+    padding: 5px 12px;
+    border-radius: var(--default-border-radius);
+    font-weight: 500;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 button.button:hover:not(:disabled), input[type="file"]::file-selector-button:hover {
     background-color: var(--button-hover-background-color);
+    border-color: var(--base-color-info);
+    box-shadow: 0 2px 8px var(--box-shadow-color);
     cursor: pointer;
 }
 
@@ -481,10 +502,15 @@ button.button:disabled {
     background-color: var(--modal-button-background-color);
     color: var(--modal-button-text-color);
     border: 1px solid var(--modal-button-border-color);
+    border-radius: var(--default-border-radius);
+    padding: 5px 14px;
+    font-weight: 500;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal button.button:hover:not(:disabled), .pwa-toast button.button:hover {
     background-color: var(--modal-button-hover-background-color);
+    border-color: var(--base-color-info);
 }
 
 /* code mirror styles & overrides */
@@ -700,10 +726,18 @@ select {
 
 .sidebar-item {
     cursor: pointer;
+    border-radius: 6px;
+    margin: 1px 4px;
+    transition: background-color 0.15s ease;
 }
 
 .tag {
     background: var(--sidebar-item-active-color);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 /* a value that changes while it shows, such as a running time or a growing size, keeps its width, so the tags after
@@ -717,17 +751,17 @@ select {
 }
 
 .tag.green {
-    background: #75ba24;
+    background: #10b981;
     color: white;
 }
 
 .tag.yellow {
-    background: #ec8702;
+    background: #f59e0b;
     color: white;
 }
 
 .tag.red {
-    background: #e15251;
+    background: #ef4444;
     color: white;
 }
 
@@ -738,6 +772,8 @@ select {
     align-items: center;
     user-select: none;
     height: 100%;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
 }
 
 .custom-dropdown.disabled {
@@ -761,10 +797,15 @@ select {
     border: 1px solid var(--default-border-color);
     border-radius: var(--default-border-radius);
     outline: 0;
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     margin-bottom: 0.5rem;
     background: inherit;
     cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.custom-select:hover {
+    border-color: var(--base-color-info);
 }
 
 .text-with-line::after {
@@ -784,12 +825,12 @@ select {
 }
 
 .passed-tests {
-    color: rgba(76, 237, 39, 0.65);
+    color: #10b981;
     font-size: 0.6rem !important;
 }
 
 .failed-tests {
-    color: rgb(237, 39, 39);
+    color: #ef4444;
     font-size: 0.6rem !important;
 }
 
@@ -800,8 +841,9 @@ select {
     color: var(--modal-text-color);
     top: 0;
     left: 0;
-    padding: 0.5em;
-    border-radius: var(--default-border-radius);
+    padding: 0.5em 0.8em;
+    border-radius: 8px;
     border: 1px solid var(--modal-border-color);
-    box-shadow: 0 2px 4px var(--box-shadow-color);
+    box-shadow: 0 4px 16px var(--box-shadow-color);
+    font-size: 0.8rem;
 }

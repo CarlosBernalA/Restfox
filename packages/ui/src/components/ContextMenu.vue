@@ -181,47 +181,51 @@ export default {
     position: fixed;
     z-index: 1;
     border: 1px solid var(--menu-border-color);
-    box-shadow: 0 0 1rem 0 var(--box-shadow-color);
-    border-radius: 0.3rem;
+    box-shadow: 0 10px 30px var(--box-shadow-color);
+    border-radius: 10px;
     min-width: 15rem;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding: 6px;
     background: var(--background-color);
     overflow-y: auto;
     left: -9999px;
     max-height: 35rem;
     user-select: none;
+    backdrop-filter: blur(12px);
 }
 
 button.context-menu-item {
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     outline: none;
     background: var(--background-color);
     border: none;
+    border-radius: 6px;
     display: flex;
     width: 100%;
     text-align: left;
     color: var(--text-color);
     cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 button.context-menu-item:disabled {
     cursor: default;
     font-size: 0.7rem;
+    opacity: 0.5;
 }
 
 button.context-menu-item:not(:active):focus {
-    outline: 1px solid black;
-    background: #82828240;
+    outline: none;
+    background: var(--sidebar-item-active-color);
 }
 
 button.context-menu-item:hover:not(:disabled),
 button.context-menu-item.active:not(:disabled) {
-    background: #82828240;
+    background: var(--sidebar-item-active-color);
+    color: var(--base-color-info);
 }
 
 button.context-menu-item:active:not(:disabled) {
-    background: #82828259;
+    background: var(--sidebar-item-active-color);
 }
 
 button.context-menu-item > i {

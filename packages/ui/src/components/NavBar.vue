@@ -467,7 +467,9 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 31.5px;
+    height: 36px;
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--default-border-color);
 }
 
 .spacer {
@@ -475,9 +477,10 @@ export default {
 }
 
 .heading {
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
+    gap: 6px;
 }
 
 .right-nav-container {
@@ -485,6 +488,7 @@ export default {
     align-items: center;
     height: 100%;
     min-width: fit-content;
+    gap: 2px;
 }
 
 .heading a:not(:hover), .right-nav-container a {
@@ -494,27 +498,30 @@ export default {
 .right-nav-container a {
     display: inline-flex;
     align-items: center;
-    height: 100%;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    height: 28px;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
     color: var(--text-color);
+    border-radius: 6px;
+    transition: all 0.15s ease;
 }
 
 .right-nav-container a:hover {
-    background-color: var(--border-color-lighter-darkened);
+    background-color: var(--sidebar-item-active-color);
+    color: var(--base-color-info);
 }
 
 .right-nav-container a.bl {
-    border-left: 1px solid var(--border-color-lighter);
+    border-left: 1px solid transparent;
 }
 
 .right-nav-container a.br {
-    border-right: 1px solid var(--border-color-lighter);
+    border-right: 1px solid transparent;
 }
 
 .right-nav-container .gh-button-container {
     border: 1px solid var(--default-border-color);
-    border-radius: 0.25em;
+    border-radius: 6px;
     line-height: 14px;
 }
 

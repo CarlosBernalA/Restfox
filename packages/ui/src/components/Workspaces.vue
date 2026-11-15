@@ -162,18 +162,23 @@ export default {
 
 .workspace {
     border: 1px solid var(--default-border-color);
+    background: var(--surface-color);
     cursor: pointer;
     height: 196px;
     width: 204px;
-    border-radius: 4px;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px var(--box-shadow-color);
     user-select: none;
     word-break: break-all;
     display: grid;
     grid-template-rows: auto auto 1fr;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .workspace:hover {
-    border: 1px solid var(--base-color-info);
+    border-color: var(--base-color-info);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.18);
 }
 
 .workspace svg {

@@ -278,17 +278,25 @@ export default {
     flex-basis: fit-content;
     overflow-y: auto;
     cursor: pointer;
+    padding: 3px 6px 0 6px;
+    gap: 4px;
 }
 
 .tab-bar .tab {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    padding-left: 0.7rem;
-    padding-right: 0.7rem;
-    border-right: 1px solid var(--default-border-color);
-    border-top: 1px solid transparent;
+    padding: 0.45rem 0.85rem;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border: 1px solid transparent;
+    border-bottom: none;
     white-space: nowrap;
-    background-color: var(--sidebar-item-active-color);
+    background-color: transparent;
+    color: var(--tip-text-color);
+    transition: all 0.15s ease;
+}
+
+.tab-bar .tab:hover:not(.tab-active) {
+    background-color: var(--border-color-lighter-darkened);
+    color: var(--text-color);
 }
 
 .tab-bar .tab.disable-pointer-events * {
@@ -296,8 +304,12 @@ export default {
 }
 
 .tab-bar .tab-active {
-    border-top: 1px solid red;
+    border: 1px solid var(--default-border-color);
+    border-bottom: 1px solid var(--background-color);
+    border-top: 2px solid var(--base-color-info);
     background-color: var(--background-color);
+    color: var(--text-color);
+    font-weight: 500;
 }
 
 .tab-bar .tab-add {

@@ -743,13 +743,26 @@ export default {
 .sidebar .sidebar-filter {
     display: flex;
     border-bottom: 1px solid var(--default-border-color);
+    height: 36px;
+    align-items: center;
+    padding: 0 6px;
+    background: var(--surface-color);
 }
 
 .sidebar .sidebar-filter > input  {
     width: 100%;
-    padding: 5px;
+    padding: 6px 10px;
     outline: 0;
-    border: 0;
+    border: 1px solid var(--default-border-color);
+    border-radius: 6px;
+    background: var(--background-color);
+    color: var(--text-color);
+    transition: all 0.15s ease;
+}
+
+.sidebar .sidebar-filter > input:focus {
+    border-color: var(--base-color-info);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
 .sidebar .sidebar-list-container {
@@ -760,24 +773,26 @@ export default {
 }
 
 .sidebar .sidebar-item {
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    margin: 2px 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: flex;
     align-items: center;
     border: 1px solid transparent;
+    border-radius: 6px;
     position: relative;
-    border-left: 2px solid transparent;
+    border-left: 3px solid transparent;
+    transition: all 0.15s ease;
 }
 
 .sidebar .sidebar-item-active {
     background-color: var(--sidebar-item-active-color);
     border: 1px solid var(--default-border-color);
-    border-right: 0;
-    border-radius: var(--default-border-radius);
-    border-left: 2px solid red;
+    border-radius: 6px;
+    border-left: 3px solid var(--base-color-info);
+    font-weight: 500;
 }
 
 .sidebar .sidebar-item:hover {
