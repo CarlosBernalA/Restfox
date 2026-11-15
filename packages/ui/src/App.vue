@@ -12,7 +12,7 @@ import ReloadPrompt from '@/components/ReloadPrompt.vue'
 </template>
 
 <script>
-import { getCollectionForWorkspace, fileIPC } from './db'
+import { getCollectionForWorkspace, fileIPC, getAllKV, setKV } from './db'
 import { allItemWritesSettled, itemWritesPending, loadItemVersions, withEnvironmentVersions, workspaceWritesSettled } from '@/utils/item-file-versions'
 import constants from './constants'
 import {
@@ -427,6 +427,20 @@ export default {
         window.addEventListener('keydown', this.handleGlobalKeydown)
 
         window.addEventListener('beforeunload', this.holdUnloadForPendingSaves)
+
+        if(import.meta.env.MODE === 'web-standalone') {
+            try {
+                getAllKV().then(allKV => {
+                    if (allKV) {
+                        for(const [k, v] of Object.entries(allKV)) {
+                            localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v))
+                        }
+                    }
+                })
+            } catch(e) {
+                console.warn('Failed to prefetch KV from SQLite:', e)
+            }
+        }
 
         const savedTheme = localStorage.getItem(constants.LOCAL_STORAGE_KEY.THEME)
         const savedGithubStarCount = localStorage.getItem(constants.LOCAL_STORAGE_KEY.GITHUB_STAR_COUNT)

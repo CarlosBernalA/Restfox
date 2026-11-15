@@ -10,7 +10,7 @@ import {
 } from './global'
 import { type OAuthTokens, setOAuthTokens } from '@/utils/oauth-tokens'
 
-async function callWebStandaloneAPI(method: string, args: Record<string, unknown>) {
+async function callWebStandaloneAPI(method: string, args: Record<string, unknown> = {}) {
     const res = await fetch(`/api/${method}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,7 +81,6 @@ export class RestfoxDatabase extends Dexie {
     constructor() {
         super('Restfox')
 
-        // Define the database schema
         this.version(5).stores({
             workspaces: '_id',
             collections: '_id, workspaceId',
@@ -100,8 +99,6 @@ db.version(5).stores({
     responses: '_id, collectionId'
 })
 
-// settings that hold a file, such as Settings > CA Certificates, too large for localStorage. A database of its own, a new
-// table in the Restfox database would raise its version and older releases could not open it
 export interface SettingsFile {
     fileName: string
     content: string
@@ -122,16 +119,58 @@ class RestfoxSettingsFilesDatabase extends Dexie {
 const settingsFilesDB = new RestfoxSettingsFilesDatabase()
 
 export async function getSettingsFile(id: string): Promise<SettingsFile | null> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/getSettingsFile', { id })
+    }
     const file = await settingsFilesDB.files.get(id)
     return file ? { fileName: file.fileName, content: file.content } : null
 }
 
 export async function putSettingsFile(id: string, file: SettingsFile) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/putSettingsFile', { id, file })
+    }
     await settingsFilesDB.files.put({ _id: id, ...file })
 }
 
 export async function deleteSettingsFile(id: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteSettingsFile', { id })
+    }
     await settingsFilesDB.files.delete(id)
+}
+
+export async function getKV(key: string): Promise<any> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        try {
+            return await callWebStandaloneAPI('db/getKV', { key })
+        } catch {
+            return null
+        }
+    }
+    return localStorage.getItem(key)
+}
+
+export async function setKV(key: string, value: any): Promise<void> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        try {
+            await callWebStandaloneAPI('db/setKV', { key, value })
+        } catch (e) {
+            console.error('setKV error:', e)
+        }
+    }
+    localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value))
+}
+
+export async function getAllKV(): Promise<Record<string, any>> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        try {
+            return (await callWebStandaloneAPI('db/getAllKV', {})) || {}
+        } catch {
+            return {}
+        }
+    }
+    return {}
 }
 
 export async function exportDB() {
@@ -148,7 +187,10 @@ export async function importDB(file: File) {
 
 // Workspaces
 
-export async function getAllWorkspaces() {
+export async function getAllWorkspaces(): Promise<Workspace[]> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/getAllWorkspaces', {})
+    }
     return db.workspaces.toCollection().reverse().sortBy('updatedAt')
 }
 
@@ -160,21 +202,24 @@ export async function getFileWorkspace(location: string): Promise<FileWorkspace>
 }
 
 export async function putWorkspace(workspace: Workspace) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/putWorkspace', { workspace })
+    }
     await db.workspaces.put(workspace)
 }
 
-// The error a file workspace's storage returns for a write it refused, such as environments over a file it cannot read
-// version is what a save of environments was made from, as updateCollection's is; onSending as there too
 export async function updateWorkspace(workspaceId: string, updatedFields: Partial<Workspace>, skipUpdateForFileWorkspace = false, version?: string, onSending?: () => void): Promise<{ error: string | null, changedOutside?: boolean, version?: string }> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        onSending?.()
+        return callWebStandaloneAPI('db/updateWorkspace', { workspaceId, updatedFields })
+    }
+
     let error: string | null = null
     let changedOutside: boolean | undefined
     let savedVersion: string | undefined
     if(fileIPC && !skipUpdateForFileWorkspace) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
-            // this will used for updating workspace name, environments & currentEnvironment
-            // a save that moves the workspace to another location fails at the old one when that was wrong, so its
-            // error is not told: the location is saved below all the same, which is how the user fixes it
             const locationChanged = updatedFields.location !== undefined && updatedFields.location !== workspace.location
             try {
                 const sending = fileIPC.updateWorkspace(workspace, updatedFields, version)
@@ -188,16 +233,13 @@ export async function updateWorkspace(workspaceId: string, updatedFields: Partia
                 }
             } catch (e) {
                 console.warn('Error updating file workspace', e)
-                // any other save that throws, such as for a folder it may not write to, is told to the user
                 if(!locationChanged) {
                     error = e instanceof Error ? e.message : String(e)
                 }
             }
-            // a name the workspace's restfox.json did not take stays as it was, as the error the user is shown says
             if(error) {
                 delete updatedFields.name
             }
-            // we don't want to update these fields into indexedDB if file workspace
             delete updatedFields.currentEnvironment
             delete updatedFields.environment
             delete updatedFields.environments
@@ -213,25 +255,38 @@ export async function updateWorkspace(workspaceId: string, updatedFields: Partia
 }
 
 export async function deleteWorkspace(workspaceId: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteWorkspace', { workspaceId })
+    }
     await db.workspaces.delete(workspaceId)
 }
 
 // Collections
 
-export async function getAllCollectionIdsForGivenWorkspace(workspaceId: string) {
-    return db.collections.where({ workspaceId }).primaryKeys()
+export async function getAllCollectionIdsForGivenWorkspace(workspaceId: string): Promise<string[]> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        const res = await callWebStandaloneAPI('db/getCollectionForWorkspace', { workspaceId, type: null })
+        return res?.collection?.map((c: any) => c._id) || []
+    }
+    return db.collections.where({ workspaceId }).primaryKeys() as Promise<string[]>
 }
 
-// watch is for loading the workspace the window shows, which Electron then watches for changes made outside Restfox.
-// Leave it off for anything else, such as an export, so the watcher stays on the open workspace
-// versions holds the version of each request, socket and gRPC item's file in a file workspace, by id
 export async function getCollectionForWorkspace(workspaceId: string, type = null, watch = false): Promise<{ error: string | null, collection: CollectionItem[], workspace: FileWorkspace | null, idMap: Map<string, string> | null, versions?: Record<string, string>, environmentVersions?: Record<string, string> }> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        const result = await callWebStandaloneAPI('db/getCollectionForWorkspace', { workspaceId, type })
+        if (type === null && Array.isArray(result?.collection)) {
+            for(const collectionItem of result.collection) {
+                deserializeRequestFiles(collectionItem)
+            }
+        }
+        return result
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
             const result = await fileIPC.getCollectionForWorkspace(workspace, type, watch)
 
-            // web-standalone: idMap is serialized as array of entries over HTTP (JSON doesn't support Map)
             if (Array.isArray(result.idMap)) {
                 result.idMap = new Map(result.idMap)
             }
@@ -264,6 +319,12 @@ export async function getCollectionForWorkspace(workspaceId: string, type = null
 }
 
 export async function getCollectionById(workspaceId: string, collectionId: string): Promise<CollectionItem> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        const item = await callWebStandaloneAPI('db/getCollectionById', { collectionId })
+        if (item) deserializeRequestFiles(item)
+        return item
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -278,25 +339,26 @@ interface CreateCollectionResult {
     error: string | null,
     oldCollectionId: string | null,
     newCollectionId: string | null,
-    // a file workspace's refusal of some of a folder's environments, which the folder is made without
     environmentsError?: string | null
     environmentsVersion?: string
-    // file workspace: the version of a created item's file
     version?: string
 }
 
 export interface UpdateCollectionResult {
     error: string | null
-    // file workspace: the save was refused, as the file changed outside Restfox since the version it was made from
     changedOutside?: boolean
-    // file workspace: the item file's version after the write, and before it for a merge of one field
     version?: string
     versionBefore?: string | null
-    // saveOAuthTokens: the item's auth is no longer OAuth 2.0, so nothing was written
     notOAuth2?: boolean
 }
 
 export async function createCollection(workspaceId: string, collection: CollectionItem): Promise<CreateCollectionResult> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        const colClone = structuredClone(collection)
+        await serializeRequestFiles(colClone)
+        return callWebStandaloneAPI('db/createCollection', { collection: colClone })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -317,14 +379,17 @@ export async function createCollections(workspaceId: string, collections: Collec
     error: string | null,
     results: CreateCollectionResult[]
 }> {
-    console.log('createCollections', collections)
+    if (import.meta.env.MODE === 'web-standalone') {
+        const collectionsClone = structuredClone(collections)
+        await Promise.all(collectionsClone.map(col => serializeRequestFiles(col)))
+        return callWebStandaloneAPI('db/createCollections', { collections: collectionsClone })
+    }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
             const collectionsClone = structuredClone(collections)
             await Promise.all(collectionsClone.map(collection => serializeRequestFiles(collection)))
-            console.log('createCollections: serialized', collectionsClone)
             return fileIPC.createCollections(workspace, collectionsClone)
         }
     }
@@ -346,8 +411,6 @@ async function transformFileToFileObject(file: File): Promise<FileObject> {
 }
 
 function transformFileObjectToFile(file: FileObject): File | null {
-    // Return null so the caller clears the reference — better to show "No File Selected"
-    // than silently send 0 bytes.
     if(file.bufferOmitted) {
         return null
     }
@@ -363,7 +426,6 @@ async function serializeRequestFiles(collection: Partial<CollectionItem>) {
     if(collection.body && collection.body.params) {
         for(const param of collection.body.params) {
             if(param.files) {
-                // filter out non-file objects
                 param.files = (param.files as any[]).filter(file => file instanceof File)
                 param.files = await Promise.all(param.files.map(async file => await transformFileToFileObject(file as File)))
             }
@@ -390,7 +452,6 @@ async function serializeRequestResponseFiles(response: RequestFinalResponse) {
         response.request.body = await transformFileToFileObject(response.request.body)
     }
 
-    // an entry of a kind only a newer version knows may have a body but no request, or one without an original
     if(response.request?.original?.body) {
         if(response.request.original.body.fileName && response.request.original.body.fileName instanceof File) {
             response.request.original.body.fileName = await transformFileToFileObject(response.request.original.body.fileName)
@@ -399,7 +460,6 @@ async function serializeRequestResponseFiles(response: RequestFinalResponse) {
         if(response.request.original.body.params) {
             for(const param of response.request.original.body.params) {
                 if(param.files) {
-                    // filter out non-file objects
                     param.files = (param.files as any[]).filter(file => file instanceof File)
                     param.files = await Promise.all(param.files.map(file => transformFileToFileObject(file as File)))
                 }
@@ -409,7 +469,6 @@ async function serializeRequestResponseFiles(response: RequestFinalResponse) {
 }
 
 function deserializeRequestResponseFiles(response: RequestFinalResponse) {
-    // a gRPC call's entry, or one of a kind only a newer version knows, may have no body, which stays absent
     if(Array.isArray(response.buffer)) {
         response.buffer = new Uint8Array(response.buffer as unknown as number[]).buffer
     }
@@ -433,17 +492,20 @@ function deserializeRequestResponseFiles(response: RequestFinalResponse) {
     }
 }
 
-// version is what a save of a whole request, socket or gRPC item was made from, see utils/item-file-versions; a file workspace
-// refuses the save when its file holds anything else. Saves of one field merge into the file and leave it out, but for a folder's headers or auth, checked against the version of those.
-// onSending is called as the storage call starts, after a request's body files are read
 export async function updateCollection(workspaceId: string, collectionId: string, updatedFields: Partial<CollectionItem>, version?: string | null, onSending?: () => void): Promise<UpdateCollectionResult> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        const fieldsClone = structuredClone(updatedFields)
+        await serializeRequestFiles(fieldsClone)
+        onSending?.()
+        return callWebStandaloneAPI('db/updateCollection', { collectionId, updatedFields: fieldsClone })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
             await serializeRequestFiles(updatedFields)
             const sending = fileIPC.updateCollection(workspace, collectionId, updatedFields, version)
             onSending?.()
-            // older servers answer a whole item's save with nothing
             return (await sending) ?? { error: null }
         }
     }
@@ -457,11 +519,13 @@ export async function updateCollection(workspaceId: string, collectionId: string
     }
 }
 
-// Sets the tokens into the item's auth as storage holds it now, so an edit of the auth saved while the reply was
-// awaited is kept. An item gone is reported as changed outside, as a merge of one field into a file workspace's is
 export async function saveOAuthTokens(workspaceId: string, collectionId: string, oauthTokens: OAuthTokens, onSending?: () => void): Promise<UpdateCollectionResult> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        onSending?.()
+        return updateCollection(workspaceId, collectionId, { authentication: { type: 'oauth2', oauth2: oauthTokens } } as any)
+    }
+
     if(fileIPC) {
-        // a workspace removed meanwhile has no row, and its items none either
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace?._type === 'file') {
             const sending = fileIPC.updateCollection(workspace, collectionId, { oauthTokens }, undefined)
@@ -470,7 +534,6 @@ export async function saveOAuthTokens(workspaceId: string, collectionId: string,
         }
     }
 
-    // read and written in one transaction, so a save of the item that another browser tab makes meanwhile is kept too
     const saving = db.transaction('rw', db.collections, async(): Promise<UpdateCollectionResult> => {
         const item: CollectionItem | undefined = await db.collections.get(collectionId)
         if(item === undefined) {
@@ -489,10 +552,17 @@ export async function saveOAuthTokens(workspaceId: string, collectionId: string,
 }
 
 export async function modifyCollections(workspaceId: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return
+    }
     await db.collections.toCollection().modify({ workspaceId })
 }
 
 export async function deleteCollectionsByWorkspaceId(workspaceId: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteCollectionsByWorkspaceId', { workspaceId })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -504,6 +574,10 @@ export async function deleteCollectionsByWorkspaceId(workspaceId: string) {
 }
 
 export async function deleteCollectionsByIds(workspaceId: string, collectionIds: string[]): Promise<{ error: string | null }> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteCollectionsByIds', { collectionIds })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -521,6 +595,16 @@ export async function deleteCollectionsByIds(workspaceId: string, collectionIds:
 // Responses
 
 export async function getResponsesByCollectionId(workspaceId: string, collectionId: string): Promise<RequestFinalResponse[]> {
+    if (import.meta.env.MODE === 'web-standalone') {
+        const responses = await callWebStandaloneAPI('db/getResponsesByCollectionId', { collectionId })
+        if (Array.isArray(responses)) {
+            for(const response of responses) {
+                deserializeRequestResponseFiles(response)
+            }
+        }
+        return responses || []
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -536,6 +620,12 @@ export async function getResponsesByCollectionId(workspaceId: string, collection
 }
 
 export async function createResponse(workspaceId: string, response: RequestFinalResponse) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        const respClone = structuredClone(response)
+        await serializeRequestResponseFiles(respClone)
+        return callWebStandaloneAPI('db/createResponse', { response: respClone })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -548,6 +638,10 @@ export async function createResponse(workspaceId: string, response: RequestFinal
 }
 
 export async function updateResponse(workspaceId: string, collectionId: string, responseId: string, updatedFields: Partial<RequestFinalResponse>) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/updateResponse', { responseId, updatedFields })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -559,6 +653,10 @@ export async function updateResponse(workspaceId: string, collectionId: string, 
 }
 
 export async function deleteResponse(workspaceId: string, collectionId: string, responseId: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteResponse', { responseId })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -570,10 +668,9 @@ export async function deleteResponse(workspaceId: string, collectionId: string, 
 }
 
 export async function deleteResponsesByIds(workspaceId: string, collectionId: string, responseIds: string[]) {
-    console.log('deleteResponsesByIds', {
-        collectionId,
-        responseIds,
-    })
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteResponsesByIds', { responseIds })
+    }
 
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
@@ -586,6 +683,10 @@ export async function deleteResponsesByIds(workspaceId: string, collectionId: st
 }
 
 export async function deleteResponsesByCollectionIds(workspaceId: string, collectionIds: string[]) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteResponsesByCollectionIds', { collectionIds })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -597,6 +698,10 @@ export async function deleteResponsesByCollectionIds(workspaceId: string, collec
 }
 
 export async function deleteResponsesByCollectionId(workspaceId: string, collectionId: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deleteResponsesByCollectionId', { collectionId })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if(workspace._type === 'file') {
@@ -610,15 +715,13 @@ export async function deleteResponsesByCollectionId(workspaceId: string, collect
 // Plugins
 
 export async function getGlobalPlugins() {
-    // we can't use where here because where null of workspaceId and collectionId is not supported by indexedDB
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/getGlobalPlugins', {})
+    }
     const allPlugins = await db.plugins.toArray()
     return allPlugins.filter(plugin => plugin.workspaceId == null && plugin.collectionId == null)
 }
 
-// Duplicating a workspace in 0.41.0 gave each request or folder plugin an import had tagged with the workspace two
-// copies, both mistagged: one on the source item, tagged with the duplicate, and the duplicate's own, tagged with the
-// source. A mistagged plugin is skipped when its item has the same plugin tagged rightly, or an older mistagged one,
-// which a duplicate of a duplicate leaves, so each item runs it once and a duplicate's own copy, alone on its item, stays
 export function withoutDuplicateLeftovers(plugins: Plugin[], workspaceId: string) {
     const isMistagged = (plugin: Plugin) => !!plugin.workspaceId && plugin.workspaceId !== workspaceId
     const isOlder = (other: Plugin, plugin: Plugin) => other.createdAt < plugin.createdAt || (other.createdAt === plugin.createdAt && other._id < plugin._id)
@@ -633,14 +736,15 @@ export function withoutDuplicateLeftovers(plugins: Plugin[], workspaceId: string
             && other.name === plugin.name
             && (!isMistagged(other) || isOlder(other, plugin))
         )
-        if(isLeftover) {
-            console.log(`Skipped plugin ${plugin._id}, a copy a workspace duplicate left on item ${plugin.collectionId}`)
-        }
         return !isLeftover
     })
 }
 
 export async function getWorkspacePlugins(workspaceId: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/getWorkspacePlugins', { workspaceId })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
@@ -649,7 +753,6 @@ export async function getWorkspacePlugins(workspaceId: string) {
     }
 
     const workspacePlugins = await db.plugins.where({ workspaceId }).toArray()
-
     const collectionIds = await getAllCollectionIdsForGivenWorkspace(workspaceId)
     const collectionItemPlugins = await db.plugins.where('collectionId').anyOf(collectionIds).toArray()
 
@@ -660,10 +763,9 @@ export async function getWorkspacePlugins(workspaceId: string) {
 }
 
 export async function createPlugin(plugin: Plugin, workspaceId: string | null = null) {
-    console.log('createPlugin', {
-        plugin,
-        workspaceId,
-    })
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/createPlugin', { plugin })
+    }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
@@ -676,12 +778,9 @@ export async function createPlugin(plugin: Plugin, workspaceId: string | null = 
 }
 
 export async function updatePlugin(pluginId: string, updatedFields: Partial<Plugin>, workspaceId: string | null = null, collectionId: string | null = null, expectedCode?: unknown): Promise<{ error?: string | null, changedOutside?: boolean } | undefined> {
-    console.log('updatePlugin', {
-        pluginId,
-        updatedFields,
-        workspaceId,
-        collectionId,
-    })
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/updatePlugin', { pluginId, updatedFields })
+    }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
@@ -694,11 +793,9 @@ export async function updatePlugin(pluginId: string, updatedFields: Partial<Plug
 }
 
 export async function deletePlugin(pluginId: string, workspaceId: string | null = null, collectionId: string | null = null) {
-    console.log('deletePlugin', {
-        pluginId,
-        workspaceId,
-        collectionId,
-    })
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deletePlugin', { pluginId })
+    }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
@@ -711,6 +808,10 @@ export async function deletePlugin(pluginId: string, workspaceId: string | null 
 }
 
 export async function deletePluginsByWorkspace(workspaceId: string) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deletePluginsByWorkspace', { workspaceId })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
@@ -718,12 +819,14 @@ export async function deletePluginsByWorkspace(workspaceId: string) {
         }
     }
 
-    // an item's plugins go with the item. One tagged with this workspace but on another workspace's item, as a duplicate
-    // made in 0.41.0 left, belongs to that item
     await db.plugins.where({ workspaceId }).filter(plugin => plugin.collectionId == null).delete()
 }
 
 export async function deletePluginsByCollectionIds(workspaceId: string, collectionIds: string[]) {
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/deletePluginsByCollectionIds', { collectionIds })
+    }
+
     if(fileIPC) {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
@@ -734,12 +837,10 @@ export async function deletePluginsByCollectionIds(workspaceId: string, collecti
     await db.plugins.where('collectionId').anyOf(collectionIds).delete()
 }
 
-// used for import
 export async function createPlugins(plugins: Plugin[], workspaceId: string | null = null) {
-    console.log('createPlugins', {
-        plugins,
-        workspaceId,
-    })
+    if (import.meta.env.MODE === 'web-standalone') {
+        return callWebStandaloneAPI('db/createPlugins', { plugins })
+    }
 
     if(fileIPC && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)

@@ -132,7 +132,7 @@ import {
     convertCollectionsFromRestfoxToInsomnia,
     exportCollection,
 } from '@/helpers'
-import { getCollectionForWorkspace } from '@/db'
+import { getCollectionForWorkspace, setKV } from '@/db'
 import constants from '../constants'
 import ContextMenu from '@/components/ContextMenu.vue'
 
@@ -258,6 +258,7 @@ export default {
             set(value) {
                 this.$store.state.theme = value
                 localStorage.setItem(constants.LOCAL_STORAGE_KEY.THEME, value)
+                setKV(constants.LOCAL_STORAGE_KEY.THEME, value)
                 applyTheme(value)
             }
         },

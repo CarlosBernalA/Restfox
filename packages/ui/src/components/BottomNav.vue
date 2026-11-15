@@ -59,6 +59,7 @@
 <script>
 import MobileBottomSheet from './MobileBottomSheet.vue'
 import { applyTheme } from '@/helpers'
+import { setKV } from '@/db'
 import constants from '@/constants'
 
 export default {
@@ -89,6 +90,7 @@ export default {
             set(value) {
                 this.$store.state.theme = value
                 localStorage.setItem(constants.LOCAL_STORAGE_KEY.THEME, value)
+                setKV(constants.LOCAL_STORAGE_KEY.THEME, value)
                 applyTheme(value)
             }
         },

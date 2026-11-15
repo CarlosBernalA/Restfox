@@ -6,10 +6,12 @@ import https from 'https'
 import { isIP } from 'net'
 import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
-import { pathToFileURL } from 'url'
+import { fileURLToPath, pathToFileURL } from 'url'
+import path from 'path'
 import { createHash, randomUUID } from 'crypto'
 import * as db from './src/db.js'
 import * as helpers from './src/helpers.js'
+import { sqliteStorage } from './sqlite-storage.js'
 import TaskQueue from './src/task-queue.js'
 import { withSentHeadersCapture } from './src/sent-headers-capture.js'
 import { trustSystemCACertificates, parseCACertificates, getCACertificatesWithCustom } from './src/ca-certificates.js'
@@ -22,9 +24,11 @@ const app = express()
 
 const operationQueue = new TaskQueue()
 
-const port = process.env.PORT || 4004
+const port = Number(process.env.EPIFLOW_SERVICE_PORT || process.env.PORT || 4004)
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const UI_DIR = process.env.RESTFOX_UI_DIR || path.resolve(__dirname, '../ui')
 
-app.use(express.static('public'))
+app.use(express.static(UI_DIR))
 
 // File workspace data has no HTTP body size cap, as in the desktop app.
 app.use('/api/', express.json({ limit: Infinity }))
@@ -815,6 +819,46 @@ app.post('/api/deletePlugin',                     apiRoute(({ workspace, collect
 app.post('/api/deletePluginsByWorkspace',         apiRoute(({ workspace }) => db.deletePluginsByWorkspace(workspace)))
 app.post('/api/deletePluginsByCollectionIds',     apiRoute(({ workspace, collectionIds }) => db.deletePluginsByCollectionIds(workspace, collectionIds)))
 app.post('/api/createPlugins',                    apiRoute(({ workspace, plugins }) => db.createPlugins(workspace, plugins)))
+
+// SQLite Persistent Storage Routes (EpiFlow service persistence)
+app.post('/api/db/getAllWorkspaces',                apiRoute(() => sqliteStorage.getAllWorkspaces()))
+app.post('/api/db/getWorkspace',                    apiRoute(({ id }) => sqliteStorage.getWorkspace(id)))
+app.post('/api/db/putWorkspace',                    apiRoute(({ workspace }) => sqliteStorage.putWorkspace(workspace)))
+app.post('/api/db/updateWorkspace',                 apiRoute(({ workspaceId, updatedFields }) => sqliteStorage.updateWorkspace(workspaceId, updatedFields)))
+app.post('/api/db/deleteWorkspace',                 apiRoute(({ workspaceId }) => sqliteStorage.deleteWorkspace(workspaceId)))
+
+app.post('/api/db/getCollectionForWorkspace',       apiRoute(({ workspaceId, type }) => sqliteStorage.getCollectionForWorkspace(workspaceId, type)))
+app.post('/api/db/getCollectionById',               apiRoute(({ collectionId }) => sqliteStorage.getCollectionById(collectionId)))
+app.post('/api/db/createCollection',                apiRoute(({ collection }) => sqliteStorage.createCollection(collection)))
+app.post('/api/db/createCollections',               apiRoute(({ collections }) => sqliteStorage.createCollections(collections)))
+app.post('/api/db/updateCollection',                apiRoute(({ collectionId, updatedFields }) => sqliteStorage.updateCollection(collectionId, updatedFields)))
+app.post('/api/db/deleteCollectionsByWorkspaceId',  apiRoute(({ workspaceId }) => sqliteStorage.deleteCollectionsByWorkspaceId(workspaceId)))
+app.post('/api/db/deleteCollectionsByIds',          apiRoute(({ collectionIds }) => sqliteStorage.deleteCollectionsByIds(collectionIds)))
+
+app.post('/api/db/getResponsesByCollectionId',      apiRoute(({ collectionId }) => sqliteStorage.getResponsesByCollectionId(collectionId)))
+app.post('/api/db/createResponse',                  apiRoute(({ response }) => sqliteStorage.createResponse(response)))
+app.post('/api/db/updateResponse',                  apiRoute(({ responseId, updatedFields }) => sqliteStorage.updateResponse(responseId, updatedFields)))
+app.post('/api/db/deleteResponse',                  apiRoute(({ responseId }) => sqliteStorage.deleteResponse(responseId)))
+app.post('/api/db/deleteResponsesByIds',            apiRoute(({ responseIds }) => sqliteStorage.deleteResponsesByIds(responseIds)))
+app.post('/api/db/deleteResponsesByCollectionId',   apiRoute(({ collectionId }) => sqliteStorage.deleteResponsesByCollectionId(collectionId)))
+app.post('/api/db/deleteResponsesByCollectionIds',  apiRoute(({ collectionIds }) => sqliteStorage.deleteResponsesByCollectionIds(collectionIds)))
+
+app.post('/api/db/getGlobalPlugins',                apiRoute(() => sqliteStorage.getGlobalPlugins()))
+app.post('/api/db/getWorkspacePlugins',             apiRoute(({ workspaceId }) => sqliteStorage.getWorkspacePlugins(workspaceId)))
+app.post('/api/db/createPlugin',                    apiRoute(({ plugin }) => sqliteStorage.createPlugin(plugin)))
+app.post('/api/db/createPlugins',                   apiRoute(({ plugins }) => sqliteStorage.createPlugins(plugins)))
+app.post('/api/db/updatePlugin',                    apiRoute(({ pluginId, updatedFields }) => sqliteStorage.updatePlugin(pluginId, updatedFields)))
+app.post('/api/db/deletePlugin',                    apiRoute(({ pluginId }) => sqliteStorage.deletePlugin(pluginId)))
+app.post('/api/db/deletePluginsByWorkspace',        apiRoute(({ workspaceId }) => sqliteStorage.deletePluginsByWorkspace(workspaceId)))
+app.post('/api/db/deletePluginsByCollectionIds',    apiRoute(({ collectionIds }) => sqliteStorage.deletePluginsByCollectionIds(collectionIds)))
+
+app.post('/api/db/getSettingsFile',                 apiRoute(({ id }) => sqliteStorage.getSettingsFile(id)))
+app.post('/api/db/putSettingsFile',                 apiRoute(({ id, file }) => sqliteStorage.putSettingsFile(id, file)))
+app.post('/api/db/deleteSettingsFile',              apiRoute(({ id }) => sqliteStorage.deleteSettingsFile(id)))
+
+app.post('/api/db/getKV',                           apiRoute(({ key }) => sqliteStorage.getKV(key)))
+app.post('/api/db/setKV',                           apiRoute(({ key, value }) => sqliteStorage.setKV(key, value)))
+app.post('/api/db/getAllKV',                        apiRoute(() => sqliteStorage.getAllKV()))
 
 // File read route
 app.post('/api/readFile',                         apiRoute(({ filePath, workspaceLocation }) => helpers.readFile(filePath, workspaceLocation)))
